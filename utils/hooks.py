@@ -1,0 +1,86 @@
+import base64
+import re
+import string
+import time
+import yagmail
+import random
+
+from robyn import jsonify
+
+from config import LOGIN_SIGNATURE, EMAIL_ADDRESS, EMAIL_PWD, EMAIL_HOST
+from models import *
+
+
+def encode(inputString):
+    byteString = inputString.encode('utf-8')
+    base64_bytes = base64.b64encode(byteString)
+    encodedString = base64_bytes.decode()
+    return encodedString
+
+
+def decode(encodedString):
+    try:
+        base64_bytes = encodedString.encode('utf-8')
+        byteString = base64.b64decode(base64_bytes)
+        decodedString = byteString.decode()
+    except Exception:
+        return None
+    return decodedString
+
+
+def checkSessionid(sessionid):
+    decodedSessionid = decode(sessionid)
+    if not decodedSessionid:
+        return None
+    escapedSignature = re.escape(LOGIN_SIGNATURE)
+    pattern = rf"^userId=(\d+)&timestamp=(\d+)&signature={escapedSignature}$"  # 必须用()包含住捕获组才能被match.group捕获
+    match = re.match(pattern, decodedSessionid)
+    if not match:
+        return None
+    userId = match.group(1)
+    timestamp = match.group(2)
+    if time.time() - float(timestamp) > 10800:  # 3小时有效
+        return None
+    return {
+        "userId": int(userId),
+        "timestamp": timestamp
+    }
+
+
+# def checkUserStateAtRoute(request):
+#     sessionid = request.json().get('sessionid')
+#     if not sessionid:
+#         return jsonify({
+#             "status": -11,
+#             "message": "用户未登录"
+#         })
+#     res = checkSessionid(sessionid)
+#     if not res:
+#         return jsonify({
+#             "status": -11,
+#             "message": "用户未登录"
+#         })
+#     return [res[0], res[1]]
+
+
+def checkUserAuthority(userId, operationLevel="adminOnly"):
+    user = session.query(User).get(userId)
+    usertype = user.usertype
+    if operationLevel == "adminOnly":
+        return usertype == 2 or usertype == 6
+    elif operationLevel == "superAdminOnly":
+        return usertype == 6
+    else:
+        return True
+
+
+def sendEmail(to, subject=None, content=None):
+    yag = yagmail.SMTP(EMAIL_ADDRESS, EMAIL_PWD, host=EMAIL_HOST)
+    yag.send(to, subject, content)
+
+
+def generateCaptcha():
+    source = string.digits * 6
+    captcha = random.sample(source, 6)
+    captcha = "".join(captcha)
+    return captcha
