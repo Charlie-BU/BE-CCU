@@ -199,3 +199,132 @@ async def deleteChemical(request):
         "status": 200,
         "message": "药品删除成功"
     })
+
+
+@chemicalRouter.post("/takeChemical")
+async def takeChemical(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    chemicalId = data["chemicalId"]
+    chemical = session.query(Chemical).get(chemicalId)
+    if userId in chemical.takerIds:
+        return jsonify({
+            "status": -2,
+            "message": "您已领用该药品"
+        })
+    chemical.takerIds.append(userId)
+    amount = int(data["amount"])
+    if amount <= 0 or amount > 100:
+        return jsonify({
+            "status": -3,
+            "message": "请输入1～100间数字，表示领用该药品数量百分比"
+        })
+    if chemical.amount < amount / 100:
+        return jsonify({
+            "status": -4,
+            "message": "药品剩余量不足领用量"
+        })
+    user = session.query(User).get(userId)
+    user.takingChemicalAmount = amount
+    chemical.amount -= amount / 100
+    session.commit()
+    return jsonify({
+        "status": 200,
+        "message": "药品领用成功"
+    })
+
+
+@chemicalRouter.post("/returnChemical")
+async def returnChemical(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    chemicalId = data["chemicalId"]
+    chemical = session.query(Chemical).get(chemicalId)
+    if userId not in chemical.takerIds:
+        return jsonify({
+            "status": -2,
+            "message": "您未领用该药品"
+        })
+    chemical.takerIds.remove(userId)
+    user = session.query(User).get(userId)
+    chemical.amount += (user.takingChemicalAmount) / 100 if user.takingChemicalAmount else 0
+    user.takingChemicalAmount = 0
+    session.commit()
+    return jsonify({
+        "status": 200,
+        "message": "药品归还成功"
+    })
+
+
+@chemicalRouter.post("/supplementChemical")
+async def supplementChemical(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    chemicalId = data["chemicalId"]
+    chemical = session.query(Chemical).get(chemicalId)
+    chemical.registerIds.append(userId)
+    session.commit()
+    return jsonify({
+        "status": 200,
+        "message": "药品补充成功"
+    })
+
+
+@chemicalRouter.post("/modifyChemicalInfo")
+async def modifyChemicalInfo(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    chemicalId = data["chemicalId"]
+    chemical = session.query(Chemical).get(chemicalId)
+    if chemical.responsorId != userId and not checkUserAuthority(userId, "adminOnly"):
+        return jsonify({
+            "status": -2,
+            "message": "权限不足"
+        })
+    modified = False
+    chemicalData = data["chemicalData"]
+    chemicalData = json.loads(chemicalData)
+    for field in chemicalData:
+        if chemicalData[field] and getattr(chemical, field) != chemicalData[field]:
+            setattr(chemical, field, chemicalData[field])
+            modified = True
+    if not modified:
+        return jsonify({
+            "status": -2,
+            "message": "没有修改的信息"
+        })
+    log = Log(operatorId=userId, operation=f"修改药品信息：{chemicalData["name"]}")
+    session.add(log)
+    session.commit()
+    return jsonify({
+        "status": 200,
+        "message": "药品信息修改成功"
+    })

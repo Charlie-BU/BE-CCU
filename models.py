@@ -48,10 +48,26 @@ class User(Base):
     direction = relationship("Direction", backref="users")
     # 导师（学生特有）
     supervisorId = Column(Integer, nullable=True)
+
     # 学生数（教师特有）
-    stuAmount = Column(Integer, nullable=True, default=0)
+    @property
+    def stuAmount(self):
+        if self.role == 2:
+            return session.query(User).filter(
+                User.role == 1,
+                User.supervisorId == self.id).count()
+        return 0
+
+    # 领用药品量（0-100）
+    takingChemicalAmount = Column(Integer, nullable=True, default=0)
+
     # 是否有效
-    isValid = Column(Boolean, nullable=False, default=True)
+    @property
+    def isValid(self):
+        if self.role == 1 and self.graduateTime:
+            if datetime.now().date() > self.graduateTime:
+                return False
+        return True
 
     @staticmethod  # 静态方法归属于类的命名空间，同时能够在不依赖类的实例的情况下调用
     def hashPassword(password):
@@ -147,7 +163,7 @@ class Item(Base):
     responsorId = Column(Integer, ForeignKey("user.id"), nullable=False)
     responsor = relationship("User", backref="items")
     # 项目组成员id
-    memberIds = Column(MutableList.as_mutable(JSON()), nullable=True)
+    memberIds = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     startTime = Column(DateTime, nullable=False)
     endTime = Column(DateTime, nullable=False)
 
@@ -199,7 +215,7 @@ class Chemical(Base):
     # 药品种类：无机1/有机2
     type = Column(Integer, nullable=False)
     # 药品危险性：常规1/易燃2/易爆3/腐蚀4/易制毒5/易制爆6
-    dangerLevel = Column(MutableList.as_mutable(JSON()), nullable=True)
+    dangerLevel = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     # 药品数量（0-100%）
     amount = Column(Float, nullable=False)
 
@@ -209,12 +225,12 @@ class Chemical(Base):
         return 2 if self.amount < 0.2 else 1  # 2: 短缺, 1: 充足
 
     # 入库人（多个）
-    registerIds = Column(MutableList.as_mutable(JSON()), nullable=False)
+    registerIds = Column(MutableList.as_mutable(JSON()), nullable=False, default=[])
     # 药品负责人（一位）
     responsorId = Column(Integer, ForeignKey("user.id"), nullable=False)
     responsor = relationship("User", backref="chemicals")
     # 领用人（多个）
-    takerIds = Column(MutableList.as_mutable(JSON()), nullable=True)
+    takerIds = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     info = Column(Text, nullable=True)
 
     def to_json(self):
@@ -250,7 +266,7 @@ class GroupMeeting(Base):
     venue = Column(Text, nullable=True)
     theme = Column(Text, nullable=True)
     desciption = Column(Text, nullable=True)
-    reporterIds = Column(MutableList.as_mutable(JSON()), nullable=False)
+    reporterIds = Column(MutableList.as_mutable(JSON()), nullable=False, default=[])
     startTime = Column(DateTime, nullable=False)
 
     def to_json(self):
@@ -272,7 +288,7 @@ class Report(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     reporterId = Column(Integer, ForeignKey("user.id"), nullable=False)
     reporter = relationship("User", backref="reports")
-    otherIds = Column(MutableList.as_mutable(JSON()), nullable=True)
+    otherIds = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     # 报告类型：文献类1/工作类2
     type = Column(Integer, nullable=False)
     content = Column(Text, nullable=True)
