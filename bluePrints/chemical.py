@@ -219,7 +219,6 @@ async def takeChemical(request):
             "status": -2,
             "message": "您已领用该药品"
         })
-    chemical.takerIds.append(userId)
     amount = int(data["amount"])
     if amount <= 0 or amount > 100:
         return jsonify({
@@ -231,6 +230,7 @@ async def takeChemical(request):
             "status": -4,
             "message": "药品剩余量不足领用量"
         })
+    chemical.takerIds.append(userId)
     user = session.query(User).get(userId)
     user.takingChemicalAmount = amount
     chemical.amount -= amount / 100
@@ -261,7 +261,7 @@ async def returnChemical(request):
         })
     chemical.takerIds.remove(userId)
     user = session.query(User).get(userId)
-    chemical.amount += (user.takingChemicalAmount) / 100 if user.takingChemicalAmount else 0
+    chemical.amount += user.takingChemicalAmount / 100 if user.takingChemicalAmount else 0
     user.takingChemicalAmount = 0
     session.commit()
     return jsonify({

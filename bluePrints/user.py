@@ -445,24 +445,95 @@ async def getSupervisorInfo(request):
         "supervisorName": supervisor.username,
     })
 
+
+@userRouter.post("/getEquipmentAndChemicalInfo")
+async def getEquipmentAndChemicalInfo(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户未登录"
+        })
+    userId = res["userId"]
+    equipmentCount = session.query(Equipment).filter(Equipment.takerIds.contains(userId)).count()
+    equipmentEgName = session.query(Equipment).filter(
+        Equipment.takerIds.contains(userId)).first().name if equipmentCount > 0 else None
+    chemicalCount = session.query(Chemical).filter(Chemical.takerIds.contains(userId)).count()
+    chemicalEgName = session.query(Chemical).filter(
+        Chemical.takerIds.contains(userId)).first().name if chemicalCount > 0 else None
+    return jsonify({
+        "status": 200,
+        "message": "领用设备及药品信息获取成功",
+        "data": {
+            "equipmentInfo": [equipmentCount, equipmentEgName],
+            "chemicalInfo": [chemicalCount, chemicalEgName],
+        }
+    })
+
+
+@userRouter.post("/modifyUserInfo")
+async def modifyUserInfo(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户未登录"
+        })
+    userId = res["userId"]
+    user = session.query(User).get(userId)
+    modified = False
+    userData = data["userData"]
+    userData = json.loads(userData)
+    for field in userData:
+        if userData[field] and getattr(user, field) != userData[field]:
+            if field == "graduateTime":
+                setattr(user, field, datetime.strptime(userData[field], "%Y-%m").date())
+            else:
+                setattr(user, field, userData[field])
+            modified = True
+    if not modified:
+        return jsonify({
+            "status": -2,
+            "message": "没有修改的信息"
+        })
+    log = Log(operatorId=userId, operation=f"修改用户信息")
+    session.add(log)
+    session.commit()
+    return jsonify({
+        "status": 200,
+        "message": "用户信息修改成功"
+    })
+
+
+@userRouter.post("/modifyPassword")
+async def modifyPassword(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户未登录"
+        })
+    userId = res["userId"]
+    user = session.query(User).get(userId)
+    oldPassword = data["oldPassword"]
+    newPassword = data["newPassword"]
+    if not user.checkPassword(oldPassword):
+        return jsonify({
+            "status": -2,
+            "message": "原密码输入错误"
+        })
+    user.hashedPassword = User.hashPassword(newPassword)
+    session.commit()
+    return jsonify({
+        "status": 200,
+        "message": "密码修改成功"
+    })
+
 # @userRouter.get("/")
 # def index():
-# c = Chemical(
-#     name="2-巯基吡啶",
-#     formula="C5H5NS",
-#     CAS="2637-34-5",
-#     type=1,
-#     dangerLevel=[1],
-#     status=1,
-#     amount=1,
-#     registerIds=[1,2],
-#     responsorId=2,
-# )
-# session.add(c)
-# d = session.query(Chemical).get(4)
-# print(d.dangerLevel)
-# d.dangerLevel.append(1)
-# session.commit()
-# return jsonify({
-#     "status": 200,
-# })

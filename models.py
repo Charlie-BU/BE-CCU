@@ -192,6 +192,8 @@ class Equipment(Base):
     # 设备负责人（一位）
     responsorId = Column(Integer, ForeignKey("user.id"), nullable=False)
     responsor = relationship("User", backref="equipments")
+    # 领用人（多个）
+    takerIds = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     info = Column(Text, nullable=True)
 
     def to_json(self):
@@ -201,6 +203,7 @@ class Equipment(Base):
             "status": self.status,
             "amount": self.amount,
             "responsorId": self.responsorId,
+            "takerIds": self.takerIds,
             "info": self.info,
         }
         return data

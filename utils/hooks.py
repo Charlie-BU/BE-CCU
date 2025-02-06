@@ -28,6 +28,7 @@ def decode(encodedString):
     return decodedString
 
 
+# TODO: Sucurity Flaw
 def checkSessionid(sessionid):
     decodedSessionid = decode(sessionid)
     if not decodedSessionid:
