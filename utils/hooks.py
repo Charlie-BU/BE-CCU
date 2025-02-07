@@ -1,14 +1,17 @@
 import base64
+import hashlib
+import hmac
 import re
 import string
 import time
 import yagmail
 import random
 
-from robyn import jsonify
+from config import LOGIN_SECRET, EMAIL_ADDRESS, EMAIL_PWD, EMAIL_HOST
+from models import session, User
 
-from config import LOGIN_SIGNATURE, EMAIL_ADDRESS, EMAIL_PWD, EMAIL_HOST
-from models import *
+
+# from models import *
 
 
 def encode(inputString):
@@ -28,18 +31,34 @@ def decode(encodedString):
     return decodedString
 
 
-# TODO: Sucurity Flaw
+# 计算sessionid携带签名
+def calcSigniture(userId):
+    secret = LOGIN_SECRET.encode('utf-8')
+    message = str(userId).encode('utf-8')
+    signature = hmac.new(secret, message, hashlib.sha512).hexdigest()
+    return signature
+
+
+def checkSignature(signature, userId):
+    secret = LOGIN_SECRET.encode('utf-8')
+    message = str(userId).encode('utf-8')
+    correctSig = hmac.new(secret, message, hashlib.sha512).hexdigest()
+    return signature == correctSig
+
+
 def checkSessionid(sessionid):
     decodedSessionid = decode(sessionid)
     if not decodedSessionid:
         return None
-    escapedSignature = re.escape(LOGIN_SIGNATURE)
-    pattern = rf"^userId=(\d+)&timestamp=(\d+)&signature={escapedSignature}$"  # 必须用()包含住捕获组才能被match.group捕获
+    pattern = rf"^userId=(\d+)&timestamp=(\d+)&signature=(.+)&algorithm=sha256$"  # 必须用()包含住捕获组才能被match.group捕获
     match = re.match(pattern, decodedSessionid)
     if not match:
         return None
     userId = match.group(1)
     timestamp = match.group(2)
+    signature = match.group(3)
+    if not checkSignature(signature, userId):  # 签名无效
+        return None
     if time.time() - float(timestamp) > 10800:  # 3小时有效
         return None
     return {

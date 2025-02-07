@@ -4,8 +4,6 @@ from datetime import timedelta
 from robyn import SubRouter, jsonify
 import requests
 from sqlalchemy import or_
-import hmac
-import hashlib
 
 from models import *
 from utils.hooks import *
@@ -56,7 +54,8 @@ async def login(request):
             "status": -5,
             "message": "您暂无权登录"
         })
-    rawSessionid = f"userId={user.id}&timestamp={int(time.time())}&signature={LOGIN_SIGNATURE}"
+    signature = calcSigniture(user.id)
+    rawSessionid = f"userId={user.id}&timestamp={int(time.time())}&signature={signature}&algorithm=sha256"
     sessionid = encode(rawSessionid)
     log = Log(operatorId=user.id, operation="用户登录（密码登录）")
     session.add(log)
@@ -132,7 +131,8 @@ async def wxLogin(request):
             "status": -6,
             "message": "您暂无权登录"
         })
-    rawSessionid = f"userId={user.id}&timestamp={int(time.time())}&signature={LOGIN_SIGNATURE}"
+    signature = calcSigniture(user.id)
+    rawSessionid = f"userId={user.id}&timestamp={int(time.time())}&signature={signature}&algorithm=sha256"
     sessionid = encode(rawSessionid)
     log = Log(operatorId=user.id, operation="用户登录（微信一键登录）")
     session.add(log)
