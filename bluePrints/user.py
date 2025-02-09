@@ -23,8 +23,8 @@ async def login(request):
             "status": -1,
             "message": "请同意小程序的协议与隐私政策",
         })
-    existUsers = session.query(User).filter(User.username == nameOrPhone).all()
-    if len(existUsers) > 1:
+    existUsers = session.query(User).filter(User.username == nameOrPhone).count()
+    if existUsers > 1:
         return jsonify({
             "status": -4,
             "message": "存在同名用户，请用手机号登录"
@@ -54,7 +54,7 @@ async def login(request):
             "status": -5,
             "message": "您暂无权登录"
         })
-    signature = calcSigniture(user.id)
+    signature = calcSignature(user.id)
     rawSessionid = f"userId={user.id}&timestamp={int(time.time())}&signature={signature}&algorithm=sha256"
     sessionid = encode(rawSessionid)
     log = Log(operatorId=user.id, operation="用户登录（密码登录）")
@@ -131,7 +131,7 @@ async def wxLogin(request):
             "status": -6,
             "message": "您暂无权登录"
         })
-    signature = calcSigniture(user.id)
+    signature = calcSignature(user.id)
     rawSessionid = f"userId={user.id}&timestamp={int(time.time())}&signature={signature}&algorithm=sha256"
     sessionid = encode(rawSessionid)
     log = Log(operatorId=user.id, operation="用户登录（微信一键登录）")

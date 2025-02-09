@@ -24,7 +24,7 @@ async def getThisChemical(request):
     chemical = Chemical.to_json(chemical)
     return jsonify({
         "status": 200,
-        "message": f"药品获取成功",
+        "message": "药品获取成功",
         "chemical": chemical
     })
 

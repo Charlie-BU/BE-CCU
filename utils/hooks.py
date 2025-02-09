@@ -32,18 +32,18 @@ def decode(encodedString):
 
 
 # 计算sessionid携带签名
-def calcSigniture(userId):
+def calcSignature(message):
     secret = LOGIN_SECRET.encode('utf-8')
-    message = str(userId).encode('utf-8')
+    message = str(message).encode('utf-8')
     signature = hmac.new(secret, message, hashlib.sha512).hexdigest()
     return signature
 
 
-def checkSignature(signature, userId):
+def checkSignature(signature, message):
     secret = LOGIN_SECRET.encode('utf-8')
-    message = str(userId).encode('utf-8')
+    message = str(message).encode('utf-8')
     correctSig = hmac.new(secret, message, hashlib.sha512).hexdigest()
-    return signature == correctSig
+    return hmac.compare_digest(signature, correctSig)
 
 
 def checkSessionid(sessionid):

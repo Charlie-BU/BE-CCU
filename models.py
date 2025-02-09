@@ -186,14 +186,15 @@ class Equipment(Base):
     __tablename__ = "equipment"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(60), nullable=False)
-    # 设备状态：在库1/借出2/损坏3/报废4
-    status = Column(Integer, nullable=False)
-    amount = Column(Integer, nullable=False)
+    # 设备状态：正常1/异常2/维修3/报废4
+    status = Column(Integer, nullable=True)
+    function = Column(Text, nullable=True)
+    # 操作规范
+    operateRegulation = Column(Text, nullable=True)
+    imageUrl = Column(Text, nullable=True)
     # 设备负责人（一位）
     responsorId = Column(Integer, ForeignKey("user.id"), nullable=False)
     responsor = relationship("User", backref="equipments")
-    # 领用人（多个）
-    takerIds = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     info = Column(Text, nullable=True)
 
     def to_json(self):
@@ -201,9 +202,11 @@ class Equipment(Base):
             "id": self.id,
             "name": self.name,
             "status": self.status,
-            "amount": self.amount,
+            "function": self.function,
+            "operateRegulation": self.operateRegulation,
+            "imageUrl": self.imageUrl,
             "responsorId": self.responsorId,
-            "takerIds": self.takerIds,
+            "responsorName": self.responsor.username,
             "info": self.info,
         }
         return data
