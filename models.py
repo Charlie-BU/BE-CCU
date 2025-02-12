@@ -370,6 +370,26 @@ class EmailCaptcha(Base):
         }
         return data
 
+
+class Notice(Base):
+    __tablename__ = "notice"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(Text, nullable=False)
+    content = Column(Text, nullable=True)
+    time = Column(DateTime, default=datetime.now(), nullable=True)
+    releaserId = Column(Integer, ForeignKey("user.id"), nullable=False)
+    releaser = relationship("User", backref="notices")
+
+    def to_json(self):
+        data = {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "time": self.time,
+            "releaserId": self.releaserId,
+        }
+        return data
+
 # 创建所有表（被alembic替代）
 # if __name__ == "__main__":
 #     Base.metadata.create_all(bind=engine)

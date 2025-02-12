@@ -2,6 +2,7 @@ from robyn import Robyn, ALLOW_CORS, jsonify
 
 from bluePrints.chemical import chemicalRouter
 from bluePrints.equipment import equipmentRouter
+from bluePrints.extras import extrasRouter
 from bluePrints.groupMeeting import meetingRouter
 from bluePrints.user import userRouter
 from models import *
@@ -14,6 +15,7 @@ app.include_router(userRouter)
 app.include_router(chemicalRouter)
 app.include_router(equipmentRouter)
 app.include_router(meetingRouter)
+app.include_router(extrasRouter)
 
 
 @app.get("/")
