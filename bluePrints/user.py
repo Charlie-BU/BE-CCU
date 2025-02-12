@@ -4,6 +4,7 @@ from datetime import timedelta
 from robyn import SubRouter, jsonify
 import requests
 from sqlalchemy import or_
+from sqlalchemy.sql.functions import user
 
 from models import *
 from utils.hooks import *
@@ -167,6 +168,7 @@ async def loginCheck(request):
         "data": {
             "id": user.id,
             "username": user.username,
+            "usertype": user.usertype,
         }
     })
 
@@ -431,9 +433,9 @@ async def getSupervisorInfo(request):
             "status": -1,
             "message": "用户未登录"
         })
-    userId = res["userId"]
-    user = session.query(User).get(userId)
-    supervisor = session.query(User).get(user.supervisorId)
+    stuId = data["stuId"]
+    student = session.query(User).get(stuId)
+    supervisor = session.query(User).get(student.supervisorId)
     if not supervisor:
         return jsonify({
             "status": -2,
@@ -457,9 +459,9 @@ async def getEquipmentAndChemicalInfo(request):
             "message": "用户未登录"
         })
     userId = res["userId"]
-    equipmentCount = session.query(Equipment).filter(Equipment.takerIds.contains(userId)).count()
+    equipmentCount = session.query(Equipment).filter(Equipment.responsorId == userId).count()
     equipmentEgName = session.query(Equipment).filter(
-        Equipment.takerIds.contains(userId)).first().name if equipmentCount > 0 else None
+        Equipment.responsorId == userId).first().name if equipmentCount > 0 else None
     chemicalCount = session.query(Chemical).filter(Chemical.takerIds.contains(userId)).count()
     chemicalEgName = session.query(Chemical).filter(
         Chemical.takerIds.contains(userId)).first().name if chemicalCount > 0 else None
@@ -533,6 +535,82 @@ async def modifyPassword(request):
     return jsonify({
         "status": 200,
         "message": "密码修改成功"
+    })
+
+
+@userRouter.post("/getAllUsers")
+async def getAllUsers(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    users = session.query(User).order_by(User.username).all()
+    users = [{
+        "id": user.id,
+        "username": user.username,
+        "gender": user.gender,
+        "role": user.role,
+        "degree": user.degree,
+        "avatarUrl": user.avatarUrl,
+        "workNum": user.workNum,
+        "supervisorId": user.supervisorId,
+        "stuAmount": user.stuAmount,
+    } for user in users]
+    return jsonify({
+        "status": 200,
+        "message": "全部用户信息获取成功",
+        "users": users
+    })
+
+
+@userRouter.post("/searchUser")
+async def searchUser(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    searchContent = data["searchContent"]
+    keywords = ["学生", "教师", "老师", "学士", "硕士", "博士"]
+    try:
+        int(searchContent)
+        users = session.query(User).filter(User.workNum.contains(searchContent)).order_by(User.username).all()
+    except ValueError:
+        users = session.query(User).filter(User.username.contains(searchContent)).order_by(User.username).all()
+    if len(users) == 0:
+        if searchContent in keywords[0] or keywords[0] in searchContent:
+            users = session.query(User).filter(User.role == 1).order_by(User.username).all()
+        elif searchContent in keywords[1] or keywords[1] in searchContent or searchContent in keywords[2] or keywords[
+            2] in searchContent:
+            users = session.query(User).filter(User.role == 2).order_by(User.username).all()
+        elif searchContent in keywords[3] or keywords[3] in searchContent:
+            users = session.query(User).filter(User.degree == 1).order_by(User.username).all()
+        elif searchContent in keywords[4] or keywords[4] in searchContent:
+            users = session.query(User).filter(User.degree == 2).order_by(User.username).all()
+        elif searchContent in keywords[5] or keywords[5] in searchContent:
+            users = session.query(User).filter(User.degree == 3).order_by(User.username).all()
+    users = [{
+        "id": user.id,
+        "username": user.username,
+        "gender": user.gender,
+        "role": user.role,
+        "degree": user.degree,
+        "avatarUrl": user.avatarUrl,
+        "workNum": user.workNum,
+        "supervisorId": user.supervisorId,
+        "stuAmount": user.stuAmount,
+    } for user in users]
+    return jsonify({
+        "status": 200,
+        "message": "查找用户信息获取成功",
+        "users": users
     })
 
 # @userRouter.get("/")
