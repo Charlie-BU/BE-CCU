@@ -260,47 +260,58 @@ async def checkNewUser(request):
             "status": -1,
             "message": "权限不足"
         })
-    opinion = data.get("opinion")
-    if opinion != "agreed" and opinion != "disagreed":
+    opinion = int(data["opinion"])
+    if opinion != 1 and opinion != 2:
         return jsonify({
             "status": -2,
             "message": "审核意见无效"
         })
-    uncheckedUserId = data.get("uncheckedUserId")
-    uncheckedUser = session.query(UserUnchecked).get(uncheckedUserId)
-    massage = data.get("massage")
-    if opinion == "disagreed":
+    userId = data["userId"]
+    uncheckedUser = session.query(UserUnchecked).get(userId)
+    massage = data["massage"]
+    if opinion == 2:
+        message = "用户未通过审核"
+        try:
+            sendEmail(
+                to=uncheckedUser.email,
+                subject="用户注册驳回通知",
+                content=f"【功能分子材料研究组管理平台】抱歉，您的注册申请没有通过。\n理由：{massage}\n请调整后重新注册，谢谢！",
+            )
+            message = "用户未通过审核，已通过邮件告知用户"
+        except Exception as e:
+            message = "用户未通过审核"
+            print("邮件发送失败", e)
+        finally:
+            log = Log(operatorId=myId, operation=f"拒绝用户「{uncheckedUser.username}」注册")
+            session.add(log)
+            session.delete(uncheckedUser)
+            session.commit()
+            return jsonify({
+                "status": 201,
+                "message": message
+            })
+    try:
         sendEmail(
             to=uncheckedUser.email,
-            subject="用户注册拒绝通知",
-            content=f"【功能分子材料研究组管理平台】抱歉，您的注册申请没有通过。\n理由：{massage}\n请调整后重新注册，谢谢！",
+            subject="用户注册通过通知",
+            content=f"【功能分子材料研究组管理平台】恭喜您，您的注册申请已通过，您可在平台正常登录。谢谢！",
         )
-        log = Log(operatorId=myId, operation=f"拒绝用户「{uncheckedUser.username}」注册")
+    except Exception as e:
+        print("邮件发送失败", e)
+    finally:
+        user = User(username=uncheckedUser.username, gender=uncheckedUser.gender, email=uncheckedUser.email,
+                    phone=uncheckedUser.phone, role=uncheckedUser.role, degree=uncheckedUser.degree,
+                    workNum=uncheckedUser.workNum, graduateTime=uncheckedUser.graduateTime,
+                    hashedPassword=uncheckedUser.hashedPassword)
+        session.add(user)
+        log = Log(operatorId=myId, operation=f"同意用户「{uncheckedUser.username}」注册")
         session.add(log)
         session.delete(uncheckedUser)
         session.commit()
         return jsonify({
-            "status": 201,
-            "message": "用户未通过审核，已通过邮件告知用户"
+            "status": 200,
+            "message": "用户通过审核，注册成功"
         })
-    sendEmail(
-        to=uncheckedUser.email,
-        subject="用户注册通过通知",
-        content=f"【功能分子材料研究组管理平台】恭喜您，您的注册申请已通过，您可在平台正常登录。谢谢！",
-    )
-    user = User(username=uncheckedUser.username, gender=uncheckedUser.gender, email=uncheckedUser.email,
-                phone=uncheckedUser.phone, role=uncheckedUser.role, degree=uncheckedUser.degree,
-                workNum=uncheckedUser.workNum, graduateTime=uncheckedUser.graduateTime,
-                hashedPassword=uncheckedUser.hashedPassword)
-    session.add(user)
-    log = Log(operatorId=myId, operation=f"同意用户「{uncheckedUser.username}」注册")
-    session.add(log)
-    session.delete(uncheckedUser)
-    session.commit()
-    return jsonify({
-        "status": 200,
-        "message": "用户通过审核，注册成功"
-    })
 
 
 @userRouter.post("/getOpenidAndSessionKey")
@@ -564,6 +575,55 @@ async def getAllUsers(request):
         "status": 200,
         "message": "全部用户信息获取成功",
         "users": users
+    })
+
+
+@userRouter.post("/getUncheckedUsersAmount")
+async def getUncheckedUsersAmount(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    if not checkUserAuthority(userId, "AdminOnly"):
+        return jsonify({
+            "status": -2,
+            "message": "权限不足"
+        })
+    uncheckedUsersAmount = session.query(UserUnchecked).count()
+    return jsonify({
+        "status": 200,
+        "message": "待审核用户数获取成功",
+        "uncheckedUsersAmount": uncheckedUsersAmount
+    })
+
+
+@userRouter.post("/getUncheckedUsersInfo")
+async def getUncheckedUsersInfo(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    if not checkUserAuthority(userId, "AdminOnly"):
+        return jsonify({
+            "status": -2,
+            "message": "权限不足"
+        })
+    uncheckedUsers = session.query(UserUnchecked).order_by(UserUnchecked.joinTime).all()
+    uncheckedUsers = [UserUnchecked.to_json(unchecked) for unchecked in uncheckedUsers]
+    return jsonify({
+        "status": 200,
+        "message": "待审核用户信息获取成功",
+        "uncheckedUsers": uncheckedUsers
     })
 
 

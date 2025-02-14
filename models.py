@@ -113,7 +113,7 @@ class UserUnchecked(Base):
     degree = Column(Integer, nullable=True)
     workNum = Column(String, nullable=False)
     graduateTime = Column(Date, nullable=True)
-    joinTime = Column(DateTime, nullable=False, default=datetime.now())
+    joinTime = Column(DateTime, nullable=False, default=datetime.now)
 
     def to_json(self):
         data = {
@@ -376,7 +376,7 @@ class Notice(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(Text, nullable=False)
     content = Column(Text, nullable=True)
-    time = Column(DateTime, default=datetime.now(), nullable=True)
+    time = Column(DateTime, default=datetime.now, nullable=True)
     releaserId = Column(Integer, ForeignKey("user.id"), nullable=False)
     releaser = relationship("User", backref="notices")
 
