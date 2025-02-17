@@ -4,4 +4,5 @@ pymysql
 alembic~=1.14.0
 bcrypt~=3.2.0
 yagmail~=0.15.293
-requests
+requests~=2.32.3
+oss2~=2.19.1

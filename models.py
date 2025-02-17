@@ -272,8 +272,9 @@ class GroupMeeting(Base):
     venue = Column(Text, nullable=True)
     theme = Column(Text, nullable=True)
     desciption = Column(Text, nullable=True)
-    reporterIds = Column(MutableList.as_mutable(JSON()), nullable=False, default=[])
-    startTime = Column(DateTime, nullable=False)
+    reporterIds = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
+    startTime = Column(DateTime, nullable=True)
+    image = Column(Text, nullable=True)
 
     def to_json(self):
         data = {
@@ -284,6 +285,7 @@ class GroupMeeting(Base):
             "desciption": self.desciption,
             "reporterIds": self.reporterIds,
             "startTime": self.startTime,
+            "image": self.image,
         }
         return data
 
