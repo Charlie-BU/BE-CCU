@@ -217,13 +217,16 @@ class Chemical(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(60), nullable=False)
     formula = Column(Text, nullable=True)
-    CAS = Column(String(60), nullable=False)
+    CAS = Column(String(60), nullable=True)
     # 药品种类：无机1/有机2
-    type = Column(Integer, nullable=False)
+    type = Column(Integer, nullable=True)
     # 药品危险性：常规1/易燃2/易爆3/腐蚀4/易制毒5/易制爆6
     dangerLevel = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
     # 药品数量（0-100%）
     amount = Column(Float, nullable=False)
+    purity = Column(Float, nullable=True)
+    specification = Column(Text, nullable=True)
+    site = Column(Text, nullable=True)
 
     # 药品状态（根据药品数量动态计算）：药品数量<20%：短缺；药品数量>=20%：充足
     @property
@@ -255,7 +258,10 @@ class Chemical(Base):
             "type": self.type,
             "dangerLevel": self.dangerLevel,
             "status": self.status,
+            "purity": self.purity,
             "amount": self.amount,
+            "specification": self.specification,
+            "site": self.site,
             "registerIds": self.registerIds,
             "responsorId": self.responsorId,
             "takerIds": self.takerIds,

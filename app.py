@@ -5,7 +5,7 @@ from bluePrints.equipment import equipmentRouter
 from bluePrints.extras import extrasRouter
 from bluePrints.groupMeeting import meetingRouter
 from bluePrints.user import userRouter
-from models import *
+from chemicalBatchImport.main import importFromExcel
 
 app = Robyn(__file__)
 ALLOW_CORS(app, origins=["*"])
@@ -21,6 +21,16 @@ app.include_router(extrasRouter)
 @app.get("/")
 async def index():
     return "Welcome to CCU Platform"
+
+
+# @app.get("/chemicalBatchImport")
+# async def chemicalBatchImport():
+#     path = "chemicalBatchImport/chemicals.xlsx"
+#     importFromExcel(path)
+#     return jsonify({
+#         "status": 200,
+#         "message": "success",
+#     })
 
 
 if __name__ == "__main__":
