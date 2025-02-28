@@ -324,20 +324,20 @@ class Report(Base):
 class Accomplishment(Base):
     __tablename__ = "accomplishment"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(60), nullable=False)
-    authorId = Column(Integer, ForeignKey("user.id"), nullable=False)
+    title = Column(String(60), nullable=True)
+    authorId = Column(Integer, ForeignKey("user.id"), nullable=True)
     author = relationship("User", backref="accomplishments")
-    correspondingAuthorId = Column(Integer, nullable=False)
-    description = Column(Text, nullable=True)
+    correspondingAuthorId = Column(Integer, nullable=True)
+    content = Column(Text, nullable=True)
     time = Column(DateTime, nullable=True)
 
     def to_json(self):
         data = {
             "id": self.id,
-            "name": self.name,
+            "title": self.title,
             "authorId": self.authorId,
             "correspondingAuthorId": self.correspondingAuthorId,
-            "description": self.description,
+            "content": self.content,
             "time": self.time,
         }
         return data
