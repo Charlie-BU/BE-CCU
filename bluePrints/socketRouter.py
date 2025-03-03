@@ -12,6 +12,11 @@ ws_ids = []
 
 @websocket.on("message")
 async def message(ws, msg):
+    # 判断心跳检测
+    if msg == "ping":
+        await ws.async_send_to(ws.id, "pong")
+        return ""
+    # 判断断开信号
     if msg == "close":
         ws.close()
         if ws.id in ws_ids:
@@ -19,7 +24,7 @@ async def message(ws, msg):
         return ""
 
     if "图片" in msg:
-        match = re.search(r"(\d+)\s*张图片", msg)
+        match = re.search(r"(\d+)\s*张", msg)
         num = int(match.group(1)) if match else 1  # 如果没匹配到，默认1张
         await sendPlantyOfData(ws, num)
         return ""

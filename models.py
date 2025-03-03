@@ -327,19 +327,29 @@ class Accomplishment(Base):
     title = Column(String(60), nullable=True)
     authorId = Column(Integer, ForeignKey("user.id"), nullable=True)
     author = relationship("User", backref="accomplishments")
-    correspondingAuthorId = Column(Integer, nullable=True)
+    @property
+    def authorName(self):
+        return self.author.username if self.author else None
+    correspondingAuthorName = Column(String(60), nullable=True)
+    otherNames = Column(Text, nullable=True, default=[])
     content = Column(Text, nullable=True)
-    time = Column(DateTime, nullable=True)
+    # 成果类型：国家级1/省级2/校级3
+    type = Column(Integer, nullable=True)
+    date = Column(Date, nullable=True)
 
     def to_json(self):
         data = {
             "id": self.id,
             "title": self.title,
             "authorId": self.authorId,
-            "correspondingAuthorId": self.correspondingAuthorId,
+            "authorName": self.authorName,
+            "correspondingAuthorName": self.correspondingAuthorName,
+            "otherNames": self.otherNames,
             "content": self.content,
-            "time": self.time,
+            "type": self.type,
+            "date": self.date,
         }
+        print(data)
         return data
 
 

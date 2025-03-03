@@ -22,7 +22,6 @@ app.include_router(extrasRouter)
 app.include_router(socketRouter)
 
 
-
 @app.get("/")
 async def index():
     return "Welcome to CCU Platform"
