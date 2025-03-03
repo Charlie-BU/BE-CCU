@@ -333,7 +333,10 @@ class Accomplishment(Base):
     correspondingAuthorName = Column(String(60), nullable=True)
     otherNames = Column(Text, nullable=True, default=[])
     content = Column(Text, nullable=True)
-    # 成果类型：国家级1/省级2/校级3
+    pic = Column(Text, nullable=True)
+    # 种类：论文成果1/项目成果2
+    category = Column(Integer, nullable=True)
+    # 论文成果：SCI1/EI2/中科院分区3；项目成果：国家级1/省级2/校级3
     type = Column(Integer, nullable=True)
     date = Column(Date, nullable=True)
 
@@ -346,6 +349,8 @@ class Accomplishment(Base):
             "correspondingAuthorName": self.correspondingAuthorName,
             "otherNames": self.otherNames,
             "content": self.content,
+            "pic": self.pic,
+            "category": self.category,
             "type": self.type,
             "date": self.date,
         }
