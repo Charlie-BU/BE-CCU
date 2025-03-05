@@ -1,6 +1,8 @@
 import datetime
 import json
 import os
+import shutil
+
 import oss2
 from robyn import SubRouter, jsonify, serve_file
 from sqlalchemy import or_, extract
@@ -18,6 +20,11 @@ bucket = oss2.Bucket(auth, OSS_ENDPOINT, OSS_BUCKET_NAME)
 # TODO：分页/分批
 @accompRouter.post("/getAllAccomps")
 async def getAllAccomps(request):
+    # 清空temp文件
+    path = "./temp"
+    if os.path.exists(path):
+        shutil.rmtree(path)  # 删除整个文件夹
+        os.makedirs(path)  # 重新创建空文件夹
     data = request.json()
     sessionid = data["sessionid"]
     res = checkSessionid(sessionid)
@@ -173,18 +180,18 @@ async def searchAccomp(request):
     })
 
 
-# TODO
 @accompRouter.get("/exportAccomps")
 async def exportAccomps(request):
-    data = request.json()
-    sessionid = data["sessionid"]
+    headers = request.headers
+    sessionid = headers.get("sessionid")
     res = checkSessionid(sessionid)
     if not res:
         return jsonify({
             "status": -1,
             "message": "用户无权限"
         })
-    year = int(data.get("year"))
+    year = headers.get("year")
+    year = None if year == "" else int(year)
     if year:
         accomps = session.query(Accomplishment).filter(
             extract('year', Accomplishment.date) == year
@@ -193,7 +200,3 @@ async def exportAccomps(request):
         accomps = session.query(Accomplishment).order_by(Accomplishment.date.desc()).all()
     fileName, filePath = generateAccompXlsx(accomps, year)
     return serve_file(file_path=filePath, file_name=fileName)
-    # return jsonify({
-    #     "status": 200,
-    #     "message": "研究成果导出成功"
-    # })

@@ -90,6 +90,29 @@ def generateCaptcha():
     return captcha
 
 
+def getAccompTypeConvention(category, type):
+    category, type = int(category), int(type)
+    convention = {}
+    if category == 1:
+        convention = {
+            1: "中科院一区",
+            2: "中科院二区",
+            3: "中科院三区",
+            4: "中科院四区",
+            5: "EI",
+            6: "中文核心",
+            7: "其他"
+        }
+    elif category == 2:
+        convention = {
+            1: "国际级",
+            2: "国家级",
+            3: "省级",
+            4: "校级"
+        }
+    return convention[type]
+
+
 def generateAccompXlsx(accomps, year=None):
     fileName = f"研究成果-{year}年.xlsx" if year else "研究成果-全部.xlsx"
     filePath = os.path.join("./temp", fileName)
@@ -100,7 +123,7 @@ def generateAccompXlsx(accomps, year=None):
             "成果标题": accomp.title,
             "成果内容": accomp.content,
             "成果种类": "论文成果" if accomp.category == 1 else "项目成果",
-            "成果类型": accomp.type,
+            "成果类型": getAccompTypeConvention(accomp.category, accomp.type),
             "发表日期": accomp.date.strftime("%Y-%m-%d") if accomp.date else "",
             "第一作者 / 项目负责人": accomp.authorName,
             "通讯作者": accomp.correspondingAuthorName,

@@ -7,4 +7,5 @@ yagmail~=0.15.293
 requests~=2.32.3
 oss2~=2.19.1
 pandas~=2.2.3
+openpyxl
 aiohttp~=3.11.10
