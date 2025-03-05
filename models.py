@@ -92,12 +92,13 @@ class User(Base):
             "avatarUrl": self.avatarUrl,
             "activeScore": self.activeScore,
             "isPrivate": self.isPrivate,
-            "directionId": self.directionId,
-            "directionName": self.direction.name,
             "supervisorId": self.supervisorId,
             "stuAmount": self.stuAmount,
             "isValid": self.isValid,
         }
+        if self.directionId:
+            data["directionId"] = self.directionId
+            data["directionName"] = self.direction.name
         return data
 
 
@@ -113,6 +114,9 @@ class UserUnchecked(Base):
     degree = Column(Integer, nullable=True)
     workNum = Column(String, nullable=False)
     graduateTime = Column(Date, nullable=True)
+    directionId = Column(Integer, ForeignKey("direction.id"), nullable=True)
+    direction = relationship("Direction", backref="users_unchecked")
+    supervisorId = Column(Integer, nullable=True)
     joinTime = Column(DateTime, nullable=False, default=datetime.now)
 
     def to_json(self):
@@ -126,6 +130,9 @@ class UserUnchecked(Base):
             "degree": self.degree,
             "workNum": self.workNum,
             "graduateTime": self.graduateTime,
+            "directionId": self.directionId,
+            "directionName": self.direction.name,
+            "supervisorId": self.supervisorId,
             "joinTime": self.joinTime,
         }
         return data
@@ -327,16 +334,19 @@ class Accomplishment(Base):
     title = Column(String(60), nullable=True)
     authorId = Column(Integer, ForeignKey("user.id"), nullable=True)
     author = relationship("User", backref="accomplishments")
+
     @property
     def authorName(self):
         return self.author.username if self.author else None
+
     correspondingAuthorName = Column(String(60), nullable=True)
-    otherNames = Column(Text, nullable=True, default=[])
+    otherNames = Column(Text, nullable=True)
     content = Column(Text, nullable=True)
     pic = Column(Text, nullable=True)
     # 种类：论文成果1/项目成果2
     category = Column(Integer, nullable=True)
-    # 论文成果：SCI1/EI2/中科院分区3；项目成果：国家级1/省级2/校级3
+    # 论文成果：中科院一区1/中科院二区2/中科院三区3/中科院四区4/EI5/中文核心6/其他7
+    # 项目成果：国际级1/国家级2/省级3/校级4
     type = Column(Integer, nullable=True)
     date = Column(Date, nullable=True)
 
@@ -354,7 +364,6 @@ class Accomplishment(Base):
             "type": self.type,
             "date": self.date,
         }
-        print(data)
         return data
 
 

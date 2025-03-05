@@ -1,17 +1,17 @@
 import base64
 import hashlib
 import hmac
+import os
 import re
 import string
 import time
+import pandas as pd
 import yagmail
 import random
+from sqlalchemy import extract
 
 from config import LOGIN_SECRET, EMAIL_ADDRESS, EMAIL_PWD, EMAIL_HOST
-from models import session, User
-
-
-# from models import *
+from models import session, User, Accomplishment
 
 
 def encode(inputString):
@@ -67,22 +67,6 @@ def checkSessionid(sessionid):
     }
 
 
-# def checkUserStateAtRoute(request):
-#     sessionid = request.json().get('sessionid')
-#     if not sessionid:
-#         return jsonify({
-#             "status": -11,
-#             "message": "用户未登录"
-#         })
-#     res = checkSessionid(sessionid)
-#     if not res:
-#         return jsonify({
-#             "status": -11,
-#             "message": "用户未登录"
-#         })
-#     return [res[0], res[1]]
-
-
 def checkUserAuthority(userId, operationLevel="adminOnly"):
     user = session.query(User).get(userId)
     usertype = user.usertype
@@ -104,3 +88,28 @@ def generateCaptcha():
     captcha = random.sample(source, 6)
     captcha = "".join(captcha)
     return captcha
+
+
+def generateAccompXlsx(accomps, year=None):
+    fileName = f"研究成果-{year}年.xlsx" if year else "研究成果-全部.xlsx"
+    filePath = os.path.join("./temp", fileName)
+    # 构造DataFrame
+    data = []
+    for accomp in accomps:
+        data.append({
+            "成果标题": accomp.title,
+            "成果内容": accomp.content,
+            "成果种类": "论文成果" if accomp.category == 1 else "项目成果",
+            "成果类型": accomp.type,
+            "发表日期": accomp.date.strftime("%Y-%m-%d") if accomp.date else "",
+            "第一作者 / 项目负责人": accomp.authorName,
+            "通讯作者": accomp.correspondingAuthorName,
+            "其他成员": accomp.otherNames,
+        })
+    df = pd.DataFrame(data)
+    # 写入Excel
+    os.makedirs(os.path.dirname(filePath), exist_ok=True)
+    df.to_excel(filePath, index=False, engine="openpyxl")
+    if not os.path.exists(filePath):
+        raise Exception(f"Excel文件未成功生成: {filePath}")
+    return fileName, filePath

@@ -207,6 +207,34 @@ async def getUsersInfoByIds(request):
     })
 
 
+@userRouter.post("/getAllDirectionNames")
+async def getAllDirectionNames(request):
+    directions = session.query(Direction).all()
+    directions = [{
+        "id": direction.id,
+        "name": direction.name
+    } for direction in directions]
+    return jsonify({
+        "status": 200,
+        "message": "全部研究方向获取成功",
+        "directions": directions
+    })
+
+
+@userRouter.post("/getAllSupervisorNames")
+async def getAllSupervisorNames(request):
+    supervisors = session.query(User).filter(User.role == 2).all()
+    supervisors = [{
+        "id": supervisor.id,
+        "name": supervisor.username
+    } for supervisor in supervisors]
+    return jsonify({
+        "status": 200,
+        "message": "全部导师姓名获取成功",
+        "supervisors": supervisors
+    })
+
+
 @userRouter.post("/register")
 async def register(request):
     data = request.json()
@@ -218,6 +246,8 @@ async def register(request):
     degree = data.get("degree")
     workNum = data.get("workNum")
     graduateTime = datetime.strptime(data.get("graduateTime"), "%Y-%m").date() if data.get("graduateTime") else None
+    directionId = data.get("directionId") if data.get("directionId") else None
+    supervisorId = data.get("supervisorId") if data.get("supervisorId") else None
     password = data.get("password")
     # 唯一性校验
     existUser = session.query(User).filter(User.phone == phone).first()
@@ -239,7 +269,8 @@ async def register(request):
             "message": "该学号 / 工号已注册"
         })
     userUnchecked = UserUnchecked(username=username, gender=gender, email=email, phone=phone, role=role, degree=degree,
-                                  workNum=workNum, graduateTime=graduateTime,
+                                  workNum=workNum, graduateTime=graduateTime, directionId=directionId,
+                                  supervisorId=supervisorId,
                                   hashedPassword=User.hashPassword(password))
     session.add(userUnchecked)
     session.commit()
@@ -302,6 +333,7 @@ async def checkNewUser(request):
         user = User(username=uncheckedUser.username, gender=uncheckedUser.gender, email=uncheckedUser.email,
                     phone=uncheckedUser.phone, role=uncheckedUser.role, degree=uncheckedUser.degree,
                     workNum=uncheckedUser.workNum, graduateTime=uncheckedUser.graduateTime,
+                    directionId=uncheckedUser.directionId, supervisorId=uncheckedUser.supervisorId,
                     hashedPassword=uncheckedUser.hashedPassword)
         session.add(user)
         log = Log(operatorId=myId, operation=f"同意用户「{uncheckedUser.username}」注册")

@@ -2,8 +2,8 @@ import datetime
 import json
 import os
 import oss2
-from robyn import SubRouter, jsonify
-from sqlalchemy import or_
+from robyn import SubRouter, jsonify, serve_file
+from sqlalchemy import or_, extract
 
 from models import *
 from utils.hooks import *
@@ -157,9 +157,42 @@ async def searchAccomp(request):
             Accomplishment.otherNames.contains(searchContent),
         )
     ).order_by(Accomplishment.date.desc()).all()
+    try:
+        year = int(searchContent)
+        if 1000 <= year <= 3000:
+            accomps = session.query(Accomplishment).filter(
+                extract('year', Accomplishment.date) == year
+            ).order_by(Accomplishment.date.desc()).all()
+    except ValueError:
+        pass
     accomps = [Accomplishment.to_json(accomp) for accomp in accomps]
     return jsonify({
         "status": 200,
         "message": "查找研究成果成功",
         "accomps": accomps
     })
+
+
+@accompRouter.get("/exportAccomps")
+async def exportAccomps(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    year = int(data.get("year"))
+    if year:
+        accomps = session.query(Accomplishment).filter(
+            extract('year', Accomplishment.date) == year
+        ).order_by(Accomplishment.date.desc()).all()
+    else:
+        accomps = session.query(Accomplishment).order_by(Accomplishment.date.desc()).all()
+    fileName, filePath = generateAccompXlsx(accomps, year)
+    return serve_file(file_path=filePath, file_name=fileName)
+    # return jsonify({
+    #     "status": 200,
+    #     "message": "研究成果导出成功"
+    # })
