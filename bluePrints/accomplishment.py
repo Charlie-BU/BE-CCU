@@ -101,7 +101,7 @@ async def addAccomp(request):
     date = datetime.strptime(accompData["date"], "%Y-%m-%d").date()
     accomp = Accomplishment(title=title, content=content, pic=pic, category=category, type=type, authorId=authorId,
                             correspondingAuthorName=correspondingAuthorName, otherNames=otherNames, date=date)
-    log = Log(operatorId=authorId, operation=f"添加研究成果")
+    log = Log(operatorId=authorId, operation=f"添加研究成果：{title}")
     session.add(accomp)
     session.add(log)
     session.commit()
@@ -132,9 +132,9 @@ async def deleteAccomp(request):
     if accomp.pic:
         prefix = f'https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}/'
         bucket.delete_object(accomp.pic[len(prefix):])
-    session.delete(accomp)
-    log = Log(operatorId=userId, operation=f"删除研究成果")
+    log = Log(operatorId=userId, operation=f"删除研究成果：{accomp.title}")
     session.add(log)
+    session.delete(accomp)
     session.commit()
     return jsonify({
         "status": 200,
@@ -199,4 +199,6 @@ async def exportAccomps(request):
     else:
         accomps = session.query(Accomplishment).order_by(Accomplishment.date.desc()).all()
     fileName, filePath = generateAccompXlsx(accomps, year)
+    log = Log(operatorId=res["userId"], operation="导出研究成果")
+    session.add(log)
     return serve_file(file_path=filePath, file_name=fileName)

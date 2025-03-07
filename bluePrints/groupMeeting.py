@@ -90,6 +90,8 @@ async def addMeeting(request):
     for meetingPic in meetingPics:
         meeting = GroupMeeting(image=meetingPic)
         session.add(meeting)
+    log = Log(operatorId=userId, operation=f"添加组会安排")
+    session.add(log)
     session.commit()
     return jsonify({
         "status": 200,
@@ -119,6 +121,8 @@ async def deleteMeeting(request):
     prefix = f'https://{OSS_BUCKET_NAME}.{OSS_ENDPOINT}/'
     bucket.delete_object(image[len(prefix):])
     session.delete(meeting)
+    log = Log(operatorId=userId, operation=f"删除组会安排")
+    session.add(log)
     session.commit()
     return jsonify({
         "status": 200,

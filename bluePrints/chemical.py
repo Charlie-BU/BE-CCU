@@ -237,6 +237,8 @@ async def takeChemical(request):
     user = session.query(User).get(userId)
     user.takingChemicalAmount = amount
     chemical.amount -= amount / 100
+    log = Log(operatorId=userId, operation=f"领用药品：{chemical.name}")
+    session.add(log)
     session.commit()
     return jsonify({
         "status": 200,
@@ -266,6 +268,8 @@ async def returnChemical(request):
     user = session.query(User).get(userId)
     chemical.amount += user.takingChemicalAmount / 100 if user.takingChemicalAmount else 0
     user.takingChemicalAmount = 0
+    log = Log(operatorId=userId, operation=f"归还药品：{chemical.name}")
+    session.add(log)
     session.commit()
     return jsonify({
         "status": 200,
@@ -287,6 +291,8 @@ async def supplementChemical(request):
     chemicalId = data["chemicalId"]
     chemical = session.query(Chemical).get(chemicalId)
     chemical.registerIds.append(userId)
+    log = Log(operatorId=userId, operation=f"补充药品：{chemical.name}")
+    session.add(log)
     session.commit()
     return jsonify({
         "status": 200,

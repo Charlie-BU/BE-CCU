@@ -4,7 +4,6 @@ from datetime import timedelta
 from robyn import SubRouter, jsonify
 import requests
 from sqlalchemy import or_
-from sqlalchemy.sql.functions import user
 
 from models import *
 from utils.hooks import *
@@ -704,6 +703,3 @@ async def searchUser(request):
         "message": "查找用户信息获取成功",
         "users": users
     })
-
-# @userRouter.get("/")
-# def index():
