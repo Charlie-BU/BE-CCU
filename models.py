@@ -379,6 +379,7 @@ class Log(Base):
         data = {
             "id": self.id,
             "operatorId": self.operatorId,
+            "operatorName": self.operator.username,
             "operation": self.operation,
             "time": self.time,
         }

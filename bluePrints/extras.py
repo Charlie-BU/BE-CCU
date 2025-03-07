@@ -87,3 +87,29 @@ async def deleteNotice(request):
         "status": 200,
         "message": "通知公告删除成功"
     })
+
+
+@extrasRouter.post("/getAllLogs")
+async def getAllLogs(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    user = session.query(User).get(userId)
+    if user.usertype != 6:
+        return jsonify({
+            "status": -2,
+            "message": "权限不足"
+        })
+    logs = session.query(Log).order_by(Log.time.desc()).all()
+    logs = [Log.to_json(log) for log in logs]
+    return jsonify({
+        "status": 200,
+        "message": "全部日志获取成功",
+        "logs": logs
+    })
