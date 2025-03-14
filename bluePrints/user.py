@@ -656,7 +656,7 @@ async def getUncheckedUsersInfo(request):
             "status": -2,
             "message": "权限不足"
         })
-    uncheckedUsers = session.query(UserUnchecked).order_by(UserUnchecked.joinTime).all()
+    uncheckedUsers = session.query(UserUnchecked).order_by(UserUnchecked.username).all()
     uncheckedUsers = [UserUnchecked.to_json(unchecked) for unchecked in uncheckedUsers]
     return jsonify({
         "status": 200,
