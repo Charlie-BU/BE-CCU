@@ -3,7 +3,7 @@ import json
 from datetime import timedelta
 from robyn import SubRouter, jsonify
 import requests
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from models import *
 from utils.hooks import *
@@ -266,6 +266,13 @@ async def register(request):
         return jsonify({
             "status": -3,
             "message": "该学号 / 工号已注册"
+        })
+    existUncheckedUser = session.query(UserUnchecked).filter(
+        and_(UserUnchecked.username == username, UserUnchecked.email == email)).first()
+    if existUncheckedUser:
+        return jsonify({
+            "status": -4,
+            "message": "您已提交注册，请关注邮件通知，耐心等待审核"
         })
     userUnchecked = UserUnchecked(username=username, gender=gender, email=email, phone=phone, role=role, degree=degree,
                                   workNum=workNum, graduateTime=graduateTime, directionId=directionId,

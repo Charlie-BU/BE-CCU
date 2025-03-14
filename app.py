@@ -8,6 +8,7 @@ from bluePrints.accomplishment import accompRouter
 from bluePrints.user import userRouter
 from bluePrints.socketRouter import socketRouter
 from chemicalBatchImport.main import importFromExcel
+from models import User, session
 
 app = Robyn(__file__)
 ALLOW_CORS(app, origins=["*"])
@@ -25,6 +26,30 @@ app.include_router(socketRouter)
 @app.get("/")
 async def index():
     return "Welcome to CCU Platform"
+
+
+# 下面可以放临时数据操作
+
+# @app.get("/supervisorsBatchImport")
+# async def supervisorsBatchImport():
+#     supervisorList = [
+#         ["韩利民", 1], ["王翠艳", 2], ["吕莉", 2], ["吴瑞凤", 2],
+#         ["郝剑敏", 2], ["洪海龙", 1], ["王亚琦", 1], ["白一甲", 1], ["杜玉英", 2],
+#         ["李彦杰", 1], ["李潇", 2], ["张威", 1], ["武朝军", 1],
+#         ["胡宇强", 1], ["高雪川", 1], ["高媛媛", 2], ["郭庆祥", 1], ["谢晓虹", 2],
+#         ["解瑞俊", 1], ["霍丽丽", 2], ["闫丽岗", 1], ["祁建磊", 1], ["张天行", 1],
+#         ["陈秋月", 2], ["贾慧劼", 2], ["宋丽君", 2]
+#     ]
+#     for one in supervisorList:
+#         supervisor = User(username=one[0], gender=int(one[1]), role=2,
+#                           directionId=4,
+#                           hashedPassword=User.hashPassword("ref43i$wf4uib"))
+#         session.add(supervisor)
+#     session.commit()
+#     return jsonify({
+#         "status": 200,
+#         "message": "success",
+#     })
 
 
 # @app.get("/chemicalBatchImport")

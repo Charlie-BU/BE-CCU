@@ -37,7 +37,7 @@ class User(Base):
     usertype = Column(Integer, nullable=False, default=1)
     # 学历：学士1/硕士2/博士3/其他4
     degree = Column(Integer, nullable=True)
-    workNum = Column(String, nullable=False)
+    workNum = Column(String, nullable=True)
     graduateTime = Column(Date, nullable=True)
     avatarUrl = Column(Text, nullable=True)
     openid = Column(Text, nullable=True)
