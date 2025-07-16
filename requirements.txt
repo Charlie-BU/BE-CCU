@@ -1,4 +1,4 @@
-robyn~=0.64.2
+robyn
 SQLAlchemy~=2.0.36
 pymysql
 alembic~=1.14.0

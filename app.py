@@ -1,4 +1,8 @@
+import os
+import pathlib
+
 from robyn import Robyn, ALLOW_CORS, jsonify
+from robyn.templating import JinjaTemplate
 
 from bluePrints.chemical import chemicalRouter
 from bluePrints.equipment import equipmentRouter
@@ -7,8 +11,9 @@ from bluePrints.groupMeeting import meetingRouter
 from bluePrints.accomplishment import accompRouter
 from bluePrints.user import userRouter
 from bluePrints.socketRouter import socketRouter
-from chemicalBatchImport.main import importFromExcel
-from models import User, session
+
+current_file_path = pathlib.Path(__file__).parent.resolve()
+JINJA_TEMPLATE = JinjaTemplate(os.path.join(current_file_path, "templates"))
 
 app = Robyn(__file__)
 ALLOW_CORS(app, origins=["*"])
@@ -25,7 +30,7 @@ app.include_router(socketRouter)
 
 @app.get("/")
 async def index():
-    return "Welcome to CCU Platform"
+    return JINJA_TEMPLATE.render_template("index.html")
 
 
 # 下面可以放临时数据操作
