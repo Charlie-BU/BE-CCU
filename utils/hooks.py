@@ -8,6 +8,8 @@ import time
 import pandas as pd
 import yagmail
 import random
+
+from dateutil import parser
 from sqlalchemy import extract
 
 from config import LOGIN_SECRET, EMAIL_ADDRESS, EMAIL_PWD, EMAIL_HOST
@@ -136,3 +138,18 @@ def generateAccompXlsx(accomps, year=None):
     if not os.path.exists(filePath):
         raise Exception(f"Excel文件未成功生成: {filePath}")
     return fileName, filePath
+
+
+def parse_chinese_year_month(s: str):
+    match = re.fullmatch(r'(\d{4})年(\d{1,2})月', s.strip())
+    if not match:
+        return None
+    iso_str = f"{match.group(1)}-{match.group(2)}"
+    return parser.parse(iso_str)
+
+
+def parse_chinese_year(s: str):
+    match = re.fullmatch(r'(\d{4})年', s.strip())
+    if not match:
+        return None
+    return int(match.group(1))

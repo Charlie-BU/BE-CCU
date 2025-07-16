@@ -1,10 +1,11 @@
 import json
 
+from dateutil.relativedelta import relativedelta
 from robyn import SubRouter, jsonify
 from sqlalchemy import or_
 
 from models import *
-from utils.hooks import checkSessionid, checkUserAuthority
+from utils.hooks import checkSessionid, checkUserAuthority, parse_chinese_year_month, parse_chinese_year
 
 chemicalRouter = SubRouter(__file__, prefix="/chemical")
 
@@ -336,4 +337,51 @@ async def modifyChemicalInfo(request):
     return jsonify({
         "status": 200,
         "message": "药品信息修改成功"
+    })
+
+
+@chemicalRouter.post("/getLogs")
+async def getLogs(request):
+    data = request.json()
+    sessionid = data["sessionid"]
+    res = checkSessionid(sessionid)
+    if not res:
+        return jsonify({
+            "status": -1,
+            "message": "用户无权限"
+        })
+    userId = res["userId"]
+    user = session.query(User).get(userId)
+    if user.usertype == 1:
+        return jsonify({
+            "status": -2,
+            "message": "用户无权限"
+        })
+    query = session.query(Log).filter(Log.operation.contains("药品"))
+    keyword = data["keyword"].strip()
+    # 先检验日期
+    dt = parse_chinese_year_month(keyword)
+    if dt:
+        start_date = dt.replace(day=1)
+        end_date = start_date + relativedelta(months=1)
+        logs = query.filter(Log.time >= start_date, Log.time < end_date).order_by(Log.time.desc()).all()
+    # 检验药品名
+    else:
+        year = parse_chinese_year(keyword)
+        if year:
+            start = datetime(year, 1, 1)
+            end = datetime(year + 1, 1, 1)
+            logs = query.filter(Log.time >= start, Log.time < end).order_by(Log.time.desc()).all()
+        else:
+            operator = session.query(User).filter(User.username.contains(keyword)).first()
+            if operator:
+                logs = query.filter(Log.operatorId == operator.id).order_by(Log.time.desc()).all()
+            else:
+                logs = query.filter(Log.operation.contains(keyword)).order_by(Log.time.desc()).all()
+    logs = [Log.to_json(log) for log in logs]
+
+    return jsonify({
+        "status": 200,
+        "message": "药品使用情况获取成功",
+        "logs": logs
     })
