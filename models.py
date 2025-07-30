@@ -237,16 +237,16 @@ class Chemical(Base):
     type = Column(Integer, nullable=True)
     # 药品危险性：常规1/易燃2/易爆3/腐蚀4/易制毒5/易制爆6
     dangerLevel = Column(MutableList.as_mutable(JSON()), nullable=True, default=[])
-    # 药品数量（0-100%）
+    # 药品数量（瓶）
     amount = Column(Float, nullable=False)
     purity = Column(Float, nullable=True)
     specification = Column(Text, nullable=True)
     site = Column(Text, nullable=True)
 
-    # 药品状态（根据药品数量动态计算）：药品数量<20%：短缺；药品数量>=20%：充足
+    # 药品状态（根据药品数量动态计算）：药品数量<=1瓶：短缺；药品数量>1瓶：充足
     @property
     def status(self):
-        return 2 if self.amount < 0.2 else 1  # 2: 短缺, 1: 充足
+        return 2 if self.amount <= 1 else 1  # 2: 短缺, 1: 充足
 
     # 入库人（多个）
     registerIds = Column(MutableList.as_mutable(JSON()), nullable=False, default=[])
@@ -280,6 +280,27 @@ class Chemical(Base):
             "registerIds": self.registerIds,
             "responsorId": self.responsorId,
             "takerIds": self.takerIds,
+            "info": self.info,
+        }
+        return data
+
+
+class ChemicalRecord(Base):
+    __tablename__ = "chemical_record"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chemicalId = Column(Integer, ForeignKey("chemical.id"), nullable=False)
+    chemical = relationship("Chemical", backref="records")
+    userId = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user = relationship("User", backref="chemical_records")
+    info = Column(Text, nullable=True)
+
+    def to_json(self):
+        data = {
+            "id": self.id,
+            "chemicalId": self.chemicalId,
+            "chemicalName": self.chemical.name,
+            "userId": self.userId,
+            "username": self.user.username,
             "info": self.info,
         }
         return data

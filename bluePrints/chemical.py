@@ -162,7 +162,7 @@ async def addChemical(request):
         specification=chemicalData["specification"],
         purity=float(chemicalData["purity"]),
         site=chemicalData["site"],
-        amount=1,
+        amount=0,
         info=chemicalData["info"],
         responsorId=chemicalData["responsorId"],
         registerIds=chemicalData["registerIds"],
@@ -223,22 +223,17 @@ async def takeChemical(request):
             "status": -2,
             "message": "您已领用该药品"
         })
-    amount = int(data["amount"])
-    if amount <= 0 or amount > 100:
+    amount = float(data["amount"])
+    if amount <= 0 or amount > chemical.amount:
         return jsonify({
             "status": -3,
-            "message": "请输入1～100间数字，表示领用该药品数量百分比"
-        })
-    if chemical.amount < amount / 100:
-        return jsonify({
-            "status": -4,
-            "message": "药品剩余量不足领用量"
+            "message": "请输入领用药品瓶数（可填写小数），且领用药品瓶数不能大于库存"
         })
     chemical.takerIds.append(userId)
     user = session.query(User).get(userId)
     user.takingChemicalAmount = amount
-    chemical.amount -= amount / 100
-    log = Log(operatorId=userId, operation=f"领用药品：{chemical.name}")
+    chemical.amount -= amount
+    log = Log(operatorId=userId, operation=f"领用药品：{chemical.name} {amount}瓶")
     session.add(log)
     session.commit()
     return jsonify({
@@ -267,7 +262,7 @@ async def returnChemical(request):
         })
     chemical.takerIds.remove(userId)
     user = session.query(User).get(userId)
-    chemical.amount += user.takingChemicalAmount / 100 if user.takingChemicalAmount else 0
+    chemical.amount += user.takingChemicalAmount if user.takingChemicalAmount else 0
     user.takingChemicalAmount = 0
     log = Log(operatorId=userId, operation=f"归还药品：{chemical.name}")
     session.add(log)
