@@ -137,11 +137,12 @@ class UserUnchecked(Base):
             "degree": self.degree,
             "workNum": self.workNum,
             "graduateTime": self.graduateTime,
-            "directionId": self.directionId,
-            "directionName": self.direction.name,
             "supervisorId": self.supervisorId,
             "joinTime": self.joinTime,
         }
+        if self.directionId:
+            data["directionId"] = self.directionId
+            data["directionName"] = self.direction.name
         return data
 
 
