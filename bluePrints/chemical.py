@@ -160,7 +160,7 @@ async def addChemical(request):
         type=chemicalData["type"],
         dangerLevel=chemicalData["dangerLevel"],
         specification=chemicalData["specification"],
-        purity=float(chemicalData["purity"]),
+        purity=float(chemicalData["purity"]) if chemicalData["purity"] else None,
         site=chemicalData["site"],
         amount=0,
         info=chemicalData["info"],
@@ -285,9 +285,11 @@ async def supplementChemical(request):
         })
     userId = res["userId"]
     chemicalId = data["chemicalId"]
+    amount = float(data["amount"])
     chemical = session.query(Chemical).get(chemicalId)
+    chemical.amount += amount
     chemical.registerIds.append(userId)
-    log = Log(operatorId=userId, operation=f"补充药品：{chemical.name}")
+    log = Log(operatorId=userId, operation=f"补充药品：{chemical.name} {amount}瓶")
     session.add(log)
     session.commit()
     return jsonify({
